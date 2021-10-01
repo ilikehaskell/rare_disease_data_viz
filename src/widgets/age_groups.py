@@ -2,7 +2,7 @@ import streamlit as st
 
 from ..data_store import vaccine_df
 
-def get_groups(country, country_df, st=st):
+def get_groups(st=st, key = 0):
     age_groups = [
         "Age0_4",
         "Age5_9",
@@ -21,23 +21,15 @@ def get_groups(country, country_df, st=st):
         "AgeUNK",
         ]
     
-    groups_exp = st.expander('Age & special groups')
+    groups_exp = st.expander('Age & special groups', expanded = True)
 
     age_st, age_end = groups_exp.select_slider(
         'Select age ranges', 
         options=age_groups, 
-        value = ("Age0_4", "Age80+",)
+        value = ("Age0_4", "Age80+",),
+        key = key
         )
     groups = age_groups[age_groups.index(age_st): age_groups.index(age_end)+1]
-    special_groups = [special_age_group  for special_age_group in special_age_groups if groups_exp.checkbox(special_age_group)]
-
-    groups_exp.write(
-        f"""Age groups vaccinated in {country}:\n
-        { ", ".join(set(country_df.TargetGroup))}"""
-    )
-    # groups_exp.write(
-    #     f"""Age groups not yet vaccinated in {country}:\n
-    #     { ", ".join(set(vaccine_df.TargetGroup) - set(country_df.TargetGroup))}"""
-    # )
+    special_groups = [special_age_group  for special_age_group in special_age_groups if groups_exp.checkbox(special_age_group, key=key)]
 
     return groups, special_groups

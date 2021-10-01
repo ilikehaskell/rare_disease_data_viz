@@ -6,25 +6,24 @@ from ..data_store import vaccine_df
 from ..plot_utils import plotable
 
 from .age_groups import get_groups
+from .country_info import get_country_info
 
+from random import randint
 
-def vaccine_widget():
+def vaccine_widget(groups, special_groups, key = 0):
     countries = sorted(list(set(vaccine_df.ReportingCountry)))
     
     romania_index = countries.index('RO')
-    country = st.selectbox('Country', options=countries, index=romania_index)
+    country = st.selectbox('Country', options=countries, index=romania_index, key=key)
     country_df = vaccine_df[vaccine_df.ReportingCountry == country]
 
     denominator_group_dict = country_df.groupby('TargetGroup').first().Denominator.fillna(0).to_dict()
-    
-    groups, special_groups = get_groups(country, country_df)
+    with st.expander('Country Info'):
+        get_country_info(country, country_df)
 
     population_considered = sum(denominator_group_dict[group] for group in groups+special_groups if group in denominator_group_dict)
     country_population = country_df.groupby('ReportingCountry').first().Population[0]
 
-
-    f"""Vaccines used in {country}: {", ". join(set(country_df.Vaccine))}"""
-    f"""Vaccines not used in {country}: {", ". join(set(vaccine_df.Vaccine) - set(country_df.Vaccine))}"""
 
     country_df = country_df.rename(columns={'YearWeekISO':'YW'})
 
@@ -42,8 +41,7 @@ def vaccine_widget():
         aggfunc=np.sum
         )
 
-    full_vaccine_df = full_vaccine_df[country_df.TargetGroup.isin(groups+special_groups)]
-    full_vaccine_df = full_vaccine_df.fillna(0)
+    full_vaccine_df = full_vaccine_df[country_df.TargetGroup.isin(groups+special_groups)].fillna(0)
     full_vaccine_df = full_vaccine_df.pivot_table(
         values = ["FullVaccine"],
         index="YW",
@@ -52,14 +50,12 @@ def vaccine_widget():
         )
 
     full_df = pd.concat([full_vaccine_df, all_df[['NumberDosesReceived']] ], axis=1, join='inner')
-    full_df = full_df.fillna(0)
-    full_df = full_df.cumsum()
-    full_df = full_df.fillna(0)
+    full_df = full_df.fillna(0).cumsum().fillna(0)
 
     full_df['TotalFullVaccine'] = full_df.FullVaccine.sum(axis=1)
     full_df['FullVaccinePercentageFromGroups'] = full_df.TotalFullVaccine / population_considered
     full_df['FullVaccinePercentage'] = full_df.TotalFullVaccine / country_population
-    st.header(country_population)
+
     st.header('Number of doses received')
     st.line_chart(
         plotable(full_df.NumberDosesReceived)
@@ -69,16 +65,16 @@ def vaccine_widget():
 
 
 
-    st.header('Number of doses received')
+    st.header('Number of doses applied')
     st.line_chart(
         plotable(full_df.FullVaccine)
         )
 
     st.header('Percentage of fully vaccinated from selected groups')
-    full_df
-    fff = full_df[['FullVaccinePercentage', 'FullVaccinePercentageFromGroups', 'TotalFullVaccine']]
-    plotable(fff)
-    st.line_chart(plotable(fff))
+    # full_df
+    # fff = full_df[['FullVaccinePercentage', 'FullVaccinePercentageFromGroups', 'TotalFullVaccine']].astype(float)
+    # plotable(fff)
+    # st.line_chart(plotable(fff))
     st.line_chart(full_df['FullVaccinePercentage'])
 
     st.header('Number of fully vaccinated')
