@@ -66,6 +66,12 @@ def get_vaccine_pdf(st):
         <embed src="https://www.ecdc.europa.eu/sites/default/files/documents/Variable_Dictionary_VaccineTracker-20-08-2021.pdf" width="800" height="400">
         """, unsafe_allow_html=True)
 
+def get_notification_pdf(st):
+    st.markdown("""
+        <embed src="https://www.ecdc.europa.eu/sites/default/files/documents/2021-01-13_Variable_Dictionary_and_Disclaimer_national_weekly_data.pdf" width="800" height="400">
+        """, unsafe_allow_html=True)
+    
+
 def vaccine_widget():
     # st.write(vaccine_df.head())
 
@@ -74,7 +80,6 @@ def vaccine_widget():
     romania_index = countries.index('RO')
     country = st.selectbox('Country', options=countries, index=romania_index)
     country_df = vaccine_df[vaccine_df.ReportingCountry == country]
-    country_df
 
     denominator_group_dict = country_df.groupby('TargetGroup').first().Denominator.fillna(0).to_dict()
     
@@ -88,14 +93,9 @@ def vaccine_widget():
     country_df = country_df.rename(columns={'YearWeekISO':'YW'})
 
 
-    r_df = country_df[["YW", "FirstDose", "SecondDose", "NumberDosesReceived", "Vaccine"]]
-    r_df['FullVaccine'] = r_df.apply(lambda row: row.FirstDose if row.Vaccine=='JANSS' else row.SecondDose, axis=1)
+    full_vaccine_df = country_df[["YW", "FirstDose", "SecondDose", "NumberDosesReceived", "Vaccine"]]
+    full_vaccine_df['FullVaccine'] = full_vaccine_df.apply(lambda row: row.FirstDose if row.Vaccine=='JANSS' else row.SecondDose, axis=1)
     
-
-
-    # r_df = r_df[vaccine_df.ReportingCountry == country]
-    
-
 
     all_df = country_df[country_df.TargetGroup == 'ALL']
     all_df = all_df.fillna(0)
@@ -106,38 +106,38 @@ def vaccine_widget():
         aggfunc=np.sum
         )
 
-    r_df = r_df[country_df.TargetGroup.isin(groups+special_groups)]
-    r_df = r_df.fillna(0)
-    r_df = r_df.pivot_table(
+    full_vaccine_df = full_vaccine_df[country_df.TargetGroup.isin(groups+special_groups)]
+    full_vaccine_df = full_vaccine_df.fillna(0)
+    full_vaccine_df = full_vaccine_df.pivot_table(
         values = ["FullVaccine"],
         index="YW",
         columns=["Vaccine"],
         aggfunc=np.sum
         )
 
-    r_df = pd.concat([r_df, all_df[['NumberDosesReceived']] ], axis=1, join='inner')
-    r_df = r_df.fillna(0)
-    r_df = r_df.cumsum()
-    r_df = r_df.fillna(0)
+    full_df = pd.concat([full_vaccine_df, all_df[['NumberDosesReceived']] ], axis=1, join='inner')
+    full_df = full_df.fillna(0)
+    full_df = full_df.cumsum()
+    full_df = full_df.fillna(0)
 
-    r_df['TotalFullVaccine'] = r_df.FullVaccine.sum(axis=1)
-    r_df['FullVaccinePercentage'] = r_df.TotalFullVaccine / population_considered
-    cucu = pd.DataFrame([[1.0,2],[3,4]], columns=['u','b'])
-    "cuc"
-    st.write(
-        pd.DataFrame(r_df.NumberDosesReceived[['AZ', 'COM']]),
-        pd.concat([r_df.NumberDosesReceived['AZ'], r_df.NumberDosesReceived['COM']], axis=1)
-        
-    )
+    full_df['TotalFullVaccine'] = full_df.FullVaccine.sum(axis=1)
+    full_df['FullVaccinePercentage'] = full_df.TotalFullVaccine / population_considered
     
-    
-    st.line_chart(cucu)
-    st.line_chart(pd.concat([r_df.NumberDosesReceived[col_name] for col_name in r_df.NumberDosesReceived.columns], axis=1))
+    st.header('Number of doses received')
+    st.line_chart(pd.concat([full_df.NumberDosesReceived[col_name] for col_name in full_df.NumberDosesReceived.columns], axis=1))
     # concat trick needed because of strange Altair+Streamlit+Pandas pivoted DF interaction resulting in
     # ValueError: variable encoding field is specified without a type; the type cannot be inferred because it does not match any column in the data.
-    st.line_chart(pd.concat([r_df.FullVaccine[col_name] for col_name in r_df.FullVaccine.columns], axis=1))
-    st.line_chart(r_df[['FullVaccinePercentage', 'TotalFullVaccine']])
-    
+
+    full_df.FullVaccine
+
+    st.header('Number of doses received')
+    st.line_chart(pd.concat([full_df.FullVaccine[col_name] for col_name in full_df.FullVaccine.columns], axis=1))
+
+    st.header('Percentage of fully vaccinated')
+    st.line_chart(full_df['FullVaccinePercentage'])
+
+    st.header('Number of fully vaccinated')
+    st.line_chart(full_df['TotalFullVaccine'])
 
 def variants_widget():
     st.write(variants_df.head())
@@ -145,9 +145,20 @@ def variants_widget():
 
 
 def notification_rate_widget():
-    st.write(notification_rate_df.head())
-    country_df = notification_rate_df[notification_rate_df.country == "Romania"]
+    countries = sorted(list(set(notification_rate_df.country)))
+    romania_index = countries.index('Romania')
+    country = st.selectbox('Country', options=countries, index=romania_index)
+
+    country_df = notification_rate_df[notification_rate_df.country == country]
+    country_df = country_df.rename(columns={'year_week': 'YW'})
+    country_df = country_df.set_index('YW')
     country_df
+    cd_df = pd.concat( [country_df[country_df.indicator == 'cases'].rate_14_day.rename('cases'), country_df[country_df.indicator == 'deaths'].rate_14_day.rename('deaths')], axis=1)
+    st.line_chart(cd_df)
+    st.line_chart(cd_df.deaths/cd_df.cases*100)
+
+    # st.line_chart()
+
 
 
 vaccine_df = get_vaccine_df()
@@ -166,7 +177,8 @@ def main():
 
     if st.sidebar.checkbox('View Vaccine PDF'):
         get_vaccine_pdf(pdf_container)
-
+    if st.sidebar.checkbox('View Notification PDF'):
+        get_notification_pdf(pdf_container)
 
 
 
