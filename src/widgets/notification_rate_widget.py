@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from data_store import notification_rate_df
+
+from ..data_store import notification_rate_df
 
 def notification_rate_widget():
     countries = sorted(list(set(notification_rate_df.country)))
