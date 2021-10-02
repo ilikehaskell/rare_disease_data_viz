@@ -5,10 +5,8 @@ import numpy as np
 from ..data_store import vaccine_df
 from ..plot_utils import plotable
 
-from .age_groups import get_groups
 from .country_info import get_country_info
 
-import altair as alt
 
 def vaccine_widget(groups, special_groups, key = 0):
     
@@ -64,11 +62,6 @@ def vaccine_widget(groups, special_groups, key = 0):
     st.line_chart(
         plotable(full_df.NumberDosesReceived)
         )
-    
-    # full_df.FullVaccine
-
-
-
 
 
 
