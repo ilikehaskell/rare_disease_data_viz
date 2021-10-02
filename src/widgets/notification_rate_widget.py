@@ -15,6 +15,7 @@ def notification_rate_widget(key = 0):
     st.header("Cases per 100.000, Deaths per 1 mil.")
     cd_df = pd.concat( [country_df[country_df.indicator == 'cases'].rate_14_day.rename('cases'), country_df[country_df.indicator == 'deaths'].rate_14_day.rename('deaths')], axis=1)
     st.line_chart(cd_df)
-    st.line_chart(cd_df.deaths/cd_df.cases*100)
+    st.header("Deaths/Cases")
+    st.line_chart(cd_df.deaths/cd_df.cases/10)
 
     # st.line_chart()
