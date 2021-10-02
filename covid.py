@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(layout="wide")
 
 from src.widgets.vaccine_widget import vaccine_widget
 from src.widgets.variants_widget import variants_widget
@@ -16,6 +17,7 @@ def main():
 
     if d == 'vaccine':
         ggroups = get_groups()
+        
         for column_idx, column in enumerate(st.columns(columns)):
             with column:
                 vaccine_widget(*ggroups, key = column_idx)

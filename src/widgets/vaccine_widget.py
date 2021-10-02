@@ -8,9 +8,10 @@ from ..plot_utils import plotable
 from .age_groups import get_groups
 from .country_info import get_country_info
 
-from random import randint
+import altair as alt
 
 def vaccine_widget(groups, special_groups, key = 0):
+    
     countries = sorted(list(set(vaccine_df.ReportingCountry)))
     
     romania_index = countries.index('RO')
@@ -22,6 +23,13 @@ def vaccine_widget(groups, special_groups, key = 0):
         get_country_info(country, country_df)
 
     population_considered = sum(denominator_group_dict[group] for group in groups+special_groups if group in denominator_group_dict)
+    
+    if not population_considered:
+        st.header("There is no one in the target groups, using data for all population")
+        groups = ['ALL']
+        population_considered = sum(denominator_group_dict[group] for group in groups+special_groups if group in denominator_group_dict)
+
+
     country_population = country_df.groupby('ReportingCountry').first().Population[0]
 
 
@@ -30,7 +38,7 @@ def vaccine_widget(groups, special_groups, key = 0):
 
     full_vaccine_df = country_df[["YW", "FirstDose", "SecondDose", "NumberDosesReceived", "Vaccine"]]
     full_vaccine_df['FullVaccine'] = full_vaccine_df.apply(lambda row: row.FirstDose if row.Vaccine=='JANSS' else row.SecondDose, axis=1)
-    
+    full_vaccine_df['FullVaccine']
 
     all_df = country_df[country_df.TargetGroup == 'ALL']
     all_df = all_df.fillna(0)
@@ -52,30 +60,59 @@ def vaccine_widget(groups, special_groups, key = 0):
     full_df = pd.concat([full_vaccine_df, all_df[['NumberDosesReceived']] ], axis=1, join='inner')
     full_df = full_df.fillna(0).cumsum().fillna(0)
 
-    full_df['TotalFullVaccine'] = full_df.FullVaccine.sum(axis=1)
-    full_df['FullVaccinePercentageFromGroups'] = full_df.TotalFullVaccine / population_considered
-    full_df['FullVaccinePercentage'] = full_df.TotalFullVaccine / country_population
-
     st.header('Number of doses received')
     st.line_chart(
         plotable(full_df.NumberDosesReceived)
         )
     
-    full_df.FullVaccine
+    # full_df.FullVaccine
 
 
 
-    st.header('Number of doses applied')
+
+
+
+    full_df['TotalFullVaccine'] = full_df.FullVaccine.sum(axis=1)
+    full_df['FullVaccinePercentageFromGroups'] = full_df.TotalFullVaccine / population_considered
+    full_df['FullVaccinePercentage'] = full_df.TotalFullVaccine / country_population
+    st.header('Number of fully applied vaccines')
+    
     st.line_chart(
         plotable(full_df.FullVaccine)
         )
 
     st.header('Percentage of fully vaccinated from selected groups')
-    # full_df
-    # fff = full_df[['FullVaccinePercentage', 'FullVaccinePercentageFromGroups', 'TotalFullVaccine']].astype(float)
-    # plotable(fff)
-    # st.line_chart(plotable(fff))
-    st.line_chart(full_df['FullVaccinePercentage'])
+    
+    st.line_chart(
+        plotable(full_df, ['FullVaccinePercentage', 'FullVaccinePercentageFromGroups'])
+        )
+    # st.write(plotable(full_df, ['FullVaccinePercentage', 'FullVaccinePercentageFromGroups']).index)
+    ##############
+    # base = alt.Chart(plotable(full_df, ['FullVaccinePercentage', 'FullVaccinePercentageFromGroups', 'TotalFullVaccine']).reset_index()).mark_point().encode(
+    #     x = 'YW'
+    # )
+    
+    # line = base.mark_line(interpolate='monotone').encode(
+    #     alt.Y('TotalFullVaccine',
+    #         axis=alt.Axis(title='TotalFullVaccine', titleColor='#5276A7'),
+    #         scale=alt.Scale(domain=[0, population_considered])
+    #         )
+    # )
+    # line2 = base.mark_line(interpolate='monotone').encode(
+    #     alt.Y('FullVaccinePercentageFromGroups',
+    #         axis=alt.Axis(title='FullVaccinePercentageFromGroups', titleColor='#5276A7'),
+    #         scale=alt.Scale(domain=[0, 1])
+    #         )
+    # ).interactive()
+
+    # q = alt.layer(line, line2).resolve_scale(
+    #     y = 'independent'
+    # ).interactive()
+    
+    # st.altair_chart(q, use_container_width=True)
+    ################
 
     st.header('Number of fully vaccinated')
     st.line_chart(full_df['TotalFullVaccine'])
+
+    
