@@ -1,1 +1,13 @@
- [what the data means](https://www.ecdc.europa.eu/sites/default/files/documents/Variable_Dictionary_VaccineTracker-20-08-2021.pdf)
+## How to install
+```bash
+git clone https://github.com/ilikehaskell/rare_disease_data_viz
+cd rare_disease_data_viz
+pip install -r requirements.txt
+```
+
+## How to run server
+```bash
+python -m run covid.py
+```
+
+The server is available on your local network by default, so you can access the server also from your phone if it's connected to the same WiFi
