@@ -7,7 +7,7 @@ pip install -r requirements.txt
 
 ## How to run server
 ```bash
-python -m run covid.py
+python -m streamlit run covid.py
 ```
 
 The server is available on your local network by default, so you can access the server also from your phone if it's connected to the same WiFi
