@@ -36,13 +36,25 @@ def vaccine_widget(groups, special_groups, key = 0):
 
     full_vaccine_df = country_df[['YW', 'FirstDose', 'SecondDose', 'NumberDosesReceived', 'Vaccine']]
     full_vaccine_df['FullVaccine'] = full_vaccine_df.apply(lambda row: row.FirstDose if row.Vaccine=='JANSS' else row.SecondDose, axis=1)
-    full_vaccine_df['TotalJabs'] = full_vaccine_df.apply(lambda row: row.FirstDose + row.SecondDose, axis=1) 
+
     # full_vaccine_df['FullVaccine']
 
     all_df = country_df[country_df.TargetGroup == 'ALL']
+
+    all_df['FirstAndSecondJabs'] = all_df.apply(lambda row: row.FirstDose + row.SecondDose, axis=1) 
+    all_df['RemainingJabs'] = all_df['NumberDosesReceived'] - all_df["FirstAndSecondJabs"]
+
+    # full_df['TotalRemainingJabs'] = full_df.RemainingJabs.sum(axis=1)
+    # st.header('Number of remaining jabs')
+    
+    # st.line_chart(
+    #     plotable(full_df.RemainingJabs)
+    #     )
+
+
     all_df = all_df.fillna(0)
     all_df = all_df.pivot_table(
-        values = ['NumberDosesReceived'],
+        values = ['NumberDosesReceived', 'RemainingJabs'],
         index='YW',
         columns=['Vaccine'],
         aggfunc=np.sum
@@ -56,17 +68,23 @@ def vaccine_widget(groups, special_groups, key = 0):
         aggfunc=np.sum
         )
 
-    full_df = pd.concat([full_vaccine_df, all_df[['NumberDosesReceived']] ], axis=1, join='inner')
+    full_df = pd.concat([full_vaccine_df, all_df[['NumberDosesReceived', 'RemainingJabs']] ], axis=1, join='inner')
     full_df = full_df.fillna(0).cumsum().fillna(0)
 
     st.header('Number of doses received')
     st.line_chart(
-        plotable(full_df.NumberDosesReceived)
+        plotable(full_df['NumberDosesReceived'])
+        )
+
+    st.header('Number of doses left')
+    st.line_chart(
+        plotable(full_df['RemainingJabs'])
         )
 
 
 
     full_df['TotalFullVaccine'] = full_df.FullVaccine.sum(axis=1)
+
     full_df['FullVaccinePercentageFromGroups'] = full_df.TotalFullVaccine / population_considered
     full_df['FullVaccinePercentage'] = full_df.TotalFullVaccine / country_population
     st.header('Number of fully applied vaccines')
@@ -74,6 +92,8 @@ def vaccine_widget(groups, special_groups, key = 0):
     st.line_chart(
         plotable(full_df.FullVaccine)
         )
+
+
 
     st.header('Percentage of fully vaccinated from selected groups')
     
