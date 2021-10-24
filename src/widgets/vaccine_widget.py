@@ -23,7 +23,7 @@ def vaccine_widget(groups, special_groups, key = 0):
     population_considered = sum(denominator_group_dict[group] for group in groups+special_groups if group in denominator_group_dict)
     
     if not population_considered:
-        st.header("There is no one in the target groups, using data for all population")
+        st.header('There is no one in the target groups, using data for all population')
         groups = ['ALL']
         population_considered = sum(denominator_group_dict[group] for group in groups+special_groups if group in denominator_group_dict)
 
@@ -34,24 +34,25 @@ def vaccine_widget(groups, special_groups, key = 0):
     country_df = country_df.rename(columns={'YearWeekISO':'YW'})
 
 
-    full_vaccine_df = country_df[["YW", "FirstDose", "SecondDose", "NumberDosesReceived", "Vaccine"]]
+    full_vaccine_df = country_df[['YW', 'FirstDose', 'SecondDose', 'NumberDosesReceived', 'Vaccine']]
     full_vaccine_df['FullVaccine'] = full_vaccine_df.apply(lambda row: row.FirstDose if row.Vaccine=='JANSS' else row.SecondDose, axis=1)
-    full_vaccine_df['FullVaccine']
+    full_vaccine_df['TotalJabs'] = full_vaccine_df.apply(lambda row: row.FirstDose + row.SecondDose, axis=1) 
+    # full_vaccine_df['FullVaccine']
 
     all_df = country_df[country_df.TargetGroup == 'ALL']
     all_df = all_df.fillna(0)
     all_df = all_df.pivot_table(
-        values = ["NumberDosesReceived"],
-        index="YW",
-        columns=["Vaccine"],
+        values = ['NumberDosesReceived'],
+        index='YW',
+        columns=['Vaccine'],
         aggfunc=np.sum
         )
 
     full_vaccine_df = full_vaccine_df[country_df.TargetGroup.isin(groups+special_groups)].fillna(0)
     full_vaccine_df = full_vaccine_df.pivot_table(
-        values = ["FullVaccine"],
-        index="YW",
-        columns=["Vaccine"],
+        values = ['FullVaccine'],
+        index='YW',
+        columns=['Vaccine'],
         aggfunc=np.sum
         )
 
