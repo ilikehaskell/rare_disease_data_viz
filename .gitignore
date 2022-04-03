@@ -1,0 +1,4 @@
+poetry.lock
+.python-version
+*.pyc
+covid.csv
